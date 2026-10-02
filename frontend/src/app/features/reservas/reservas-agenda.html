@@ -1,0 +1,173 @@
+<app-pagina-cabecera
+  icono="calendar_month"
+  titulo="Agenda de reservas"
+  [subtitulo]="
+    espacioElegido() ? espacioElegido()!.nombre + ' · ' + (fechaIso() | date: 'EEEE, d MMMM y') : ''
+  "
+>
+  <a matButton routerLink="/reservas">
+    <mat-icon>list</mat-icon>
+    Ver listado
+  </a>
+  <a
+    matButton="filled"
+    routerLink="/reservas/nueva"
+    [queryParams]="{ espacio: espacioElegido()?.id }"
+    [disabled]="!espacioElegido()?.disponible"
+  >
+    <mat-icon>add</mat-icon>
+    Reservar
+  </a>
+</app-pagina-cabecera>
+
+@if (cargando()) {
+  <app-cargando [filas]="6" />
+} @else if (errorCarga()) {
+  <app-estado-vacio
+    icono="cloud_off"
+    titulo="No se pudieron cargar los datos"
+    [mensaje]="errorCarga()!.message"
+  >
+    <button matButton="filled" (click)="cargar()">Reintentar</button>
+  </app-estado-vacio>
+} @else {
+  <form class="agenda-filtros" [formGroup]="formulario">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Instalación</mat-label>
+      <mat-select formControlName="espacio_id">
+        @for (espacio of espacios(); track espacio.id) {
+          <mat-option [value]="espacio.id">
+            {{ espacio.nombre }}{{ espacio.disponible ? '' : ' (cerrada)' }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Fecha</mat-label>
+      <input matInput [matDatepicker]="picker" formControlName="fecha" />
+      <mat-datepicker-toggle matIconSuffix [for]="picker" />
+      <mat-datepicker #picker />
+    </mat-form-field>
+
+    <div class="agenda-filtros__navegacion">
+      <button matIconButton type="button" (click)="irADia(-1)" aria-label="Día anterior">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <button matButton type="button" (click)="irAHoy()">Hoy</button>
+      <button matIconButton type="button" (click)="irADia(1)" aria-label="Día siguiente">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </form>
+
+  @if (!espacioElegido()) {
+    <app-estado-vacio
+      icono="calendar_month"
+      titulo="Elige una instalación"
+      mensaje="Selecciona una instalación para ver su agenda."
+    />
+  } @else if (espacioElegido(); as e) {
+    @if (!e.disponible) {
+      <p class="agenda__cerrada">
+        <mat-icon>build</mat-icon>
+        <span>
+          {{ e.nombre }} está cerrada por mantenimiento. Se muestran las reservas existentes, pero
+          no admite nuevas.
+        </span>
+      </p>
+    }
+
+    <div class="agenda-resumen">
+      <span class="resumen__dato">
+        <strong>{{ reservasDelDia().length }}</strong>
+        {{ reservasDelDia().length === 1 ? 'reserva' : 'reservas' }}
+      </span>
+      <span class="resumen__dato">
+        <strong>{{ confirmadasDelDia().length }}</strong> confirmadas
+      </span>
+      <span class="resumen__dato">
+        <strong>{{ horasOcupadas() }}</strong> ocupadas
+      </span>
+    </div>
+
+    @if (reservasDelDia().length) {
+      <div class="agenda">
+        @for (franja of franjas(); track franja.hora) {
+          <div class="agenda__franja">
+            <span class="agenda__hora">{{ franja.hora }}</span>
+            <div class="agenda__hueco">
+              @for (reserva of franja.huecos; track reserva.id) {
+                <button
+                  class="agenda__bloque"
+                  [class.agenda__bloque--cancelada]="reserva.estado !== 'confirmada'"
+                  (click)="seleccionar(reserva)"
+                  type="button"
+                >
+                  <span class="agenda__bloque__hora">
+                    {{ reserva.hora_inicio }}–{{ reserva.hora_fin }}
+                  </span>
+                  <span class="agenda__bloque__nombre">{{ reserva.usuario_nombre }}</span>
+                </button>
+              } @empty {
+                <span class="agenda__vacio">—</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <app-estado-vacio
+        icono="event_available"
+        titulo="Día libre"
+        [mensaje]="'No hay ninguna reserva en ' + e.nombre + ' ese día.'"
+      >
+        <a
+          matButton="filled"
+          routerLink="/reservas/nueva"
+          [queryParams]="{ espacio: espacioElegido()?.id }"
+          [disabled]="!espacioElegido()?.disponible"
+        >
+          Reservar este día
+        </a>
+      </app-estado-vacio>
+    }
+  }
+
+  @if (reservaSeleccionada(); as r) {
+    <div class="velo" (click)="cerrarSeleccion()">
+      <div class="hoja" (click)="$event.stopPropagation()">
+        <header class="hoja__cabecera">
+          <h2 class="hoja__titulo">{{ r.espacio_nombre }}</h2>
+          <button matIconButton (click)="cerrarSeleccion()" aria-label="Cerrar">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <dl class="hoja__datos">
+          <div>
+            <dt>Horario</dt>
+            <dd>{{ r.hora_inicio }} – {{ r.hora_fin }}</dd>
+          </div>
+          <div>
+            <dt>Usuario</dt>
+            <dd>{{ r.usuario_nombre }}</dd>
+          </div>
+          <div>
+            <dt>Fecha</dt>
+            <dd>{{ r.fecha | date: 'd MMMM y' }}</dd>
+          </div>
+          <div>
+            <dt>Estado</dt>
+            <dd>{{ r.estado }}</dd>
+          </div>
+        </dl>
+
+        <div class="hoja__acciones">
+          <a matButton="filled" [routerLink]="['/reservas', r.id]">Ver detalle</a>
+          <button matButton (click)="cerrarSeleccion()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  }
+}

@@ -1,0 +1,153 @@
+<app-pagina-cabecera
+  icono="event_available"
+  titulo="Nueva reserva"
+  [subtitulo]="
+    'Se creará a nombre de ' + (sesion.usuario()?.nombre ?? 'la persona usuaria activa') + '.'
+  "
+/>
+
+<a class="volver" matButton routerLink="/reservas">
+  <mat-icon>arrow_back</mat-icon>
+  Volver a reservas
+</a>
+
+@if (cargando()) {
+  <app-cargando [filas]="3" />
+} @else if (errorCarga()) {
+  <app-estado-vacio
+    icono="cloud_off"
+    titulo="No se pudieron cargar los datos"
+    [mensaje]="errorCarga()!.message"
+  >
+    <button matButton="filled" routerLink="/reservas">Volver</button>
+  </app-estado-vacio>
+} @else if (!disponibles().length) {
+  <app-estado-vacio
+    icono="build"
+    titulo="No hay instalaciones disponibles"
+    mensaje="Todas las instalaciones están cerradas por mantenimiento en este momento."
+  >
+    <a matButton routerLink="/espacios">Ver catálogo</a>
+  </app-estado-vacio>
+} @else {
+  <form class="formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+    <mat-form-field appearance="outline">
+      <mat-label>Instalación</mat-label>
+      <mat-icon matPrefix>sports_basketball</mat-icon>
+      <mat-select formControlName="espacio_id">
+        @for (espacio of disponibles(); track espacio.id) {
+          <mat-option [value]="espacio.id">
+            {{ espacio.nombre }} · {{ espacio.tipo }} · aforo {{ espacio.capacidad_maxima }}
+          </mat-option>
+        }
+      </mat-select>
+      @if (formulario.controls.espacio_id.hasError('required')) {
+        <mat-error>Elige una instalación.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha</mat-label>
+      <mat-icon matPrefix>calendar_today</mat-icon>
+      <input matInput [matDatepicker]="picker" formControlName="fecha" />
+      <mat-datepicker-toggle matIconSuffix [for]="picker" />
+      <mat-datepicker #picker />
+      @if (formulario.controls.fecha.hasError('required')) {
+        <mat-error>Elige una fecha.</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="franjas">
+      <mat-form-field appearance="outline">
+        <mat-label>Hora de inicio</mat-label>
+        <input matInput type="time" formControlName="hora_inicio" step="900" />
+        @if (revision().errores.hora_inicio) {
+          <mat-error>{{ revision().errores.hora_inicio }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Hora de fin</mat-label>
+        <input matInput type="time" formControlName="hora_fin" step="900" />
+        @if (revision().errores.hora_fin) {
+          <mat-error>{{ revision().errores.hora_fin }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    @if (revision().errores.fecha) {
+      <p class="aviso aviso--error">
+        <mat-icon>error</mat-icon>
+        <span>{{ revision().errores.fecha }}</span>
+      </p>
+    }
+
+    @if (revision().solapamientos.length) {
+      <div class="aviso aviso--error">
+        <mat-icon>event_busy</mat-icon>
+        <div>
+          <p class="aviso__titulo">
+            El horario se solapa con {{ revision().solapamientos.length }}
+            {{ revision().solapamientos.length === 1 ? 'reserva' : 'reservas' }} ya existente{{
+              revision().solapamientos.length === 1 ? '' : 's'
+            }}:
+          </p>
+          <ul class="aviso__lista">
+            @for (reserva of revision().solapamientos; track reserva.id) {
+              <li>
+                {{ reserva.hora_inicio }}–{{ reserva.hora_fin }} · {{ reserva.usuario_nombre }}
+              </li>
+            }
+          </ul>
+          <p class="aviso__nota">
+            Dos franjas que solo se tocan (por ejemplo 10:00–11:30 y 11:30–13:00) no se consideran
+            solapadas.
+          </p>
+        </div>
+      </div>
+    }
+
+    @if (revision().valido) {
+      <p class="aviso aviso--ok">
+        <mat-icon>check_circle</mat-icon>
+        <span>El horario está libre. La reserva se creará confirmada.</span>
+      </p>
+    }
+
+    @if (espacioElegido(); as e) {
+      <section class="ocupacion">
+        <h2 class="seccion__titulo">
+          Ocupación de {{ e.nombre }} el {{ fechaIso() | date: 'd MMMM' }}
+        </h2>
+
+        @if (huecosDelDia().length) {
+          <ul class="ocupacion__lista">
+            @for (reserva of huecosDelDia(); track reserva.id) {
+              <li class="ocupacion__item">
+                <span class="ocupacion__franja">
+                  {{ reserva.hora_inicio }}–{{ reserva.hora_fin }}
+                </span>
+                <span class="ocupacion__usuario">{{ reserva.usuario_nombre }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="ocupacion__vacia">
+            Día libre: no hay ninguna reserva confirmada en esta instalación.
+          </p>
+        }
+      </section>
+    }
+
+    <div class="acciones">
+      <button matButton="filled" type="submit" [disabled]="guardando() || !revision().valido">
+        @if (guardando()) {
+          Confirmando…
+        } @else {
+          Confirmar reserva
+        }
+      </button>
+      <a matButton routerLink="/reservas">Cancelar</a>
+    </div>
+  </form>
+}

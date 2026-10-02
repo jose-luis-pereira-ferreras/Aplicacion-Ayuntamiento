@@ -1,0 +1,97 @@
+<app-pagina-cabecera
+  icono="sports_basketball"
+  titulo="Instalaciones deportivas"
+  [subtitulo]="espacios().length + ' espacios · ' + disponibles() + ' disponibles para reservar'"
+>
+  <button matIconButton (click)="cargar()" aria-label="Actualizar listado">
+    <mat-icon>refresh</mat-icon>
+  </button>
+</app-pagina-cabecera>
+
+@if (cargando()) {
+  <app-cargando [filas]="4" />
+} @else if (errorCarga()) {
+  <app-estado-vacio
+    icono="cloud_off"
+    titulo="No se pudo cargar el catálogo"
+    [mensaje]="errorCarga()!.message"
+  >
+    <button matButton="filled" (click)="cargar()">Reintentar</button>
+  </app-estado-vacio>
+} @else {
+  <div class="fila-herramientas">
+    <mat-form-field class="fila-herramientas__campo" appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Buscar instalación</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input
+        matInput
+        type="search"
+        placeholder="Nombre, tipo o ubicación"
+        [value]="busqueda()"
+        (input)="onBuscar($event)"
+      />
+    </mat-form-field>
+  </div>
+
+  <mat-chip-listbox
+    class="filtros"
+    aria-label="Filtrar por tipo"
+    [value]="tipoActivo()"
+    (change)="tipoActivo.set($any($event.value) ?? '')"
+  >
+    <mat-chip-option value="">Todos</mat-chip-option>
+    @for (tipo of tipos(); track tipo) {
+      <mat-chip-option [value]="tipo">{{ tipo }}</mat-chip-option>
+    }
+  </mat-chip-listbox>
+
+  @if (filtrados().length) {
+    <div class="rejilla rejilla-tarjetas">
+      @for (espacio of filtrados(); track espacio.id) {
+        <article class="tarjeta instalacion">
+          <div class="instalacion__portada" [style.background]="gradiente(espacio)">
+            <mat-icon>{{ icono(espacio) }}</mat-icon>
+            <app-chip-estado [estado]="espacio.disponible" />
+          </div>
+
+          <div class="instalacion__cuerpo">
+            <h2 class="instalacion__nombre">{{ espacio.nombre }}</h2>
+            <p class="instalacion__tipo">{{ espacio.tipo }}</p>
+
+            <dl class="instalacion__datos">
+              <div>
+                <mat-icon>location_on</mat-icon>
+                <dd>{{ espacio.ubicacion }}</dd>
+              </div>
+              <div>
+                <mat-icon>groups</mat-icon>
+                <dd>Aforo {{ espacio.capacidad_maxima }} personas</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="instalacion__pie">
+            <a matButton [routerLink]="['/espacios', espacio.id]">Ver detalle</a>
+            <a
+              matButton="filled"
+              [routerLink]="['/reservas/nueva']"
+              [queryParams]="{ espacio: espacio.id }"
+              [disabled]="!espacio.disponible"
+            >
+              <mat-icon>event</mat-icon>
+              Reservar
+            </a>
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <app-estado-vacio
+      icono="search_off"
+      titulo="Ninguna instalación coincide"
+      mensaje="Prueba con otro texto o quita el filtro de tipo."
+    >
+      <button matButton (click)="busqueda.set(''); tipoActivo.set('')">Quitar filtros</button>
+    </app-estado-vacio>
+  }
+}

@@ -1,0 +1,134 @@
+@if (cargando()) {
+  <app-cargando [filas]="4" />
+} @else if (errorCarga() || !espacio()) {
+  <app-estado-vacio
+    icono="cloud_off"
+    titulo="No se pudo cargar la instalación"
+    [mensaje]="errorCarga()?.message ?? 'La instalación solicitada no existe.'"
+  >
+    <a matButton="filled" routerLink="/espacios">Volver al catálogo</a>
+  </app-estado-vacio>
+} @else {
+  @if (espacio(); as e) {
+    <a class="volver" matButton routerLink="/espacios">
+      <mat-icon>arrow_back</mat-icon>
+      Catálogo
+    </a>
+
+    <section class="ficha">
+      <div class="ficha__portada" [style.background]="gradiente()">
+        <mat-icon>{{ icono() }}</mat-icon>
+        <app-chip-estado [estado]="e.disponible" />
+      </div>
+
+      <div class="ficha__cuerpo">
+        <h1 class="ficha__nombre">{{ e.nombre }}</h1>
+        <p class="ficha__tipo">{{ e.tipo }}</p>
+
+        <dl class="ficha__datos">
+          <div>
+            <mat-icon>location_on</mat-icon>
+            <dt>Ubicación</dt>
+            <dd>{{ e.ubicacion }}</dd>
+          </div>
+          <div>
+            <mat-icon>groups</mat-icon>
+            <dt>Aforo máximo</dt>
+            <dd>{{ e.capacidad_maxima }} personas</dd>
+          </div>
+          <div>
+            <mat-icon>schedule</mat-icon>
+            <dt>Horas reservadas</dt>
+            <dd>{{ horasTotales() }}</dd>
+          </div>
+          <div>
+            <mat-icon>event_busy</mat-icon>
+            <dt>Próximas reservas</dt>
+            <dd>{{ proximas().length }}</dd>
+          </div>
+        </dl>
+
+        @if (!e.disponible) {
+          <p class="ficha__aviso">
+            <mat-icon>build</mat-icon>
+            <span>
+              Esta instalación está cerrada por mantenimiento y no admite nuevas reservas.
+            </span>
+          </p>
+        }
+
+        <div class="ficha__acciones">
+          <a matButton routerLink="/reservas/agenda" [queryParams]="{ espacio: e.id }">
+            <mat-icon>calendar_month</mat-icon>
+            Ver agenda
+          </a>
+          <a
+            matButton="filled"
+            routerLink="/reservas/nueva"
+            [queryParams]="{ espacio: e.id }"
+            [disabled]="!e.disponible"
+          >
+            <mat-icon>event_available</mat-icon>
+            Reservar
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="seccion">
+      <h2 class="seccion__titulo">Historial de reservas</h2>
+
+      @if (reservasEspacio().length) {
+        <div class="tabla-envoltura">
+          <table mat-table [dataSource]="reservasEspacio()" class="tabla">
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef>Fecha</th>
+              <td mat-cell *matCellDef="let reserva">
+                {{ reserva.fecha | date: 'd MMM y' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="franja">
+              <th mat-header-cell *matHeaderCellDef>Horario</th>
+              <td mat-cell *matCellDef="let reserva">
+                {{ reserva.hora_inicio }}–{{ reserva.hora_fin }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="usuario">
+              <th mat-header-cell *matHeaderCellDef>Usuario</th>
+              <td mat-cell *matCellDef="let reserva" class="celda-principal">
+                {{ reserva.usuario_nombre }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let reserva">
+                <app-chip-estado [estado]="reserva.estado" />
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+          </table>
+        </div>
+      } @else {
+        <app-estado-vacio
+          icono="event_busy"
+          titulo="Esta instalación no tiene reservas"
+          mensaje="Cuando se reserve, aparecerá aquí el historial completo."
+        >
+          <a
+            matButton="filled"
+            routerLink="/reservas/nueva"
+            [queryParams]="{ espacio: e.id }"
+            [disabled]="!e.disponible"
+          >
+            Crear la primera reserva
+          </a>
+        </app-estado-vacio>
+      }
+    </section>
+  }
+}

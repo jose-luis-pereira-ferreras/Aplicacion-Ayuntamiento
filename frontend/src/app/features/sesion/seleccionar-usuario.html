@@ -1,0 +1,86 @@
+<div class="acceso">
+  <section class="acceso__presentacion">
+    <div class="acceso__marca">
+      <span class="acceso__logo"><mat-icon>sports_soccer</mat-icon></span>
+      <div>
+        <p class="acceso__ayto">{{ nombreAyto }}</p>
+        <h1 class="acceso__titulo">{{ nombreApp }}</h1>
+      </div>
+    </div>
+
+    <p class="acceso__lema">
+      Gestiona las reservas de las instalaciones deportivas municipales: consulta la ocupación,
+      confirma turnos y gestiona las personas usuarias.
+    </p>
+
+    <ul class="acceso__puntos">
+      <li>
+        <mat-icon>event_available</mat-icon>
+        <span>Reserva pisos horarios con comprobación de solapamientos</span>
+      </li>
+      <li>
+        <mat-icon>calendar_month</mat-icon>
+        <span>Agenda diaria por instalación</span>
+      </li>
+      <li>
+        <mat-icon>group</mat-icon>
+        <span>Alta y edición de personas usuarias</span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="acceso__panel">
+    <header class="acceso__panel-cabecera">
+      <h2 class="acceso__panel-titulo">¿Quién eres?</h2>
+      <p class="acceso__panel-subtitulo">
+        Elige un usuario para empezar. Las nuevas reservas se asociarán a ti.
+      </p>
+    </header>
+
+    @if (cargando()) {
+      <app-cargando texto="Cargando usuarios…" />
+    } @else if (errorCarga()) {
+      <app-estado-vacio
+        icono="cloud_off"
+        titulo="No se pudo cargar la lista de usuarios"
+        [mensaje]="errorCarga()!.message"
+      >
+        <button matButton="filled" (click)="cargar()">Reintentar</button>
+      </app-estado-vacio>
+    } @else {
+      <mat-form-field class="buscador" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Buscar</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input
+          matInput
+          type="search"
+          placeholder="Nombre, correo o rol"
+          [value]="busqueda()"
+          (input)="onBuscar($event)"
+        />
+      </mat-form-field>
+
+      <ul class="lista-usuarios">
+        @for (usuario of filtrados(); track usuario.id) {
+          <li>
+            <button class="ficha" (click)="elegir(usuario)">
+              <span class="ficha__avatar">{{ iniciales(usuario.nombre) }}</span>
+              <span class="ficha__datos">
+                <span class="ficha__nombre">{{ usuario.nombre }}</span>
+                <span class="ficha__email">{{ usuario.email }}</span>
+              </span>
+              <app-chip-estado [estado]="usuario.rol" />
+              <mat-icon class="ficha__flecha">arrow_forward</mat-icon>
+            </button>
+          </li>
+        } @empty {
+          <app-estado-vacio
+            icono="person_search"
+            titulo="Ningún usuario coincide"
+            mensaje="Prueba con otro nombre, correo o rol."
+          />
+        }
+      </ul>
+    }
+  </section>
+</div>

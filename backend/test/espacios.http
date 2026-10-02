@@ -1,0 +1,204 @@
+@baseUrl = http://localhost:3000/api/espacios
+
+### ==========================================
+### CASOS DE ÉXITO (Happy Path)
+### ==========================================
+
+### 1. Obtener todos los espacios (Esperado: 200 OK)
+GET {{baseUrl}}
+
+### 2. Obtener un espacio existente por ID (Esperado: 200 OK)
+GET {{baseUrl}}/1
+
+### 3. Crear un espacio completo (Esperado: 201 Created)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Pista de Atletismo Municipal",
+  "tipo": "Atletismo",
+  "ubicacion": "Av. de los Deportes s/n",
+  "capacidad_maxima": 200,
+  "disponible": 1
+}
+
+### 4. Crear un espacio cerrado por obras (disponible a 0 por defecto) (Esperado: 201 Created)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Gimnasio Obra Nueva",
+  "tipo": "Gimnasio",
+  "ubicacion": "C/ Ficticia 12",
+  "capacidad_maxima": 50,
+  "disponible": 0
+}
+
+### 5. Actualización parcial: Cambiar solo la capacidad (Esperado: 200 OK)
+# Nota: El resto de campos deben mantenerse igual en la respuesta
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "capacidad_maxima": 75
+}
+
+### 6. Actualización lógica: Cerrar un espacio por mantenimiento (Esperado: 200 OK)
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "disponible": 0
+}
+
+### 7. Reabrir el espacio cerrado en el paso 6 (Esperado: 200 OK)
+# Importante: 0 es un valor "falsy", así que sirve para comprobar que el
+# PUT distingue entre "no enviado" y "enviado con valor 0"
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "disponible": 1
+}
+
+### 8. Borrar un espacio existente (Esperado: 204 No Content - Sin cuerpo en respuesta)
+# Asegúrate de que el ID 3 exista antes de ejecutarlo
+DELETE {{baseUrl}}/3
+
+
+### ==========================================
+### CASOS DE ERROR Y VALIDACIONES
+### ==========================================
+
+### 9. Obtener un espacio con ID que NO existe (Esperado: 404 Not Found)
+GET {{baseUrl}}/9999
+
+### 10. Crear un espacio faltando campos obligatorios (Esperado: 400 Bad Request)
+# Faltan 'tipo', 'ubicacion' y 'capacidad_maxima'
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Espacio Incompleto"
+}
+
+### 11. Crear un espacio con capacidad_maxima como texto (Esperado: 400 Bad Request)
+# SQLite es de tipado dinámico y no valida los tipos por su cuenta.
+# Antes de la corrección devolvía 201 y guardaba "muchos" como texto.
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Pista Rota",
+  "tipo": "Padel",
+  "ubicacion": "Aquí",
+  "capacidad_maxima": "muchos"
+}
+
+### 12. Crear un espacio con capacidad_maxima en 0 (Esperado: 400 Bad Request)
+# 0 es "falsy" pero está presente, así que el error debe ser de tipo,
+# no de "campo obligatorio"
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Capacidad Cero",
+  "tipo": "Padel",
+  "ubicacion": "Aquí",
+  "capacidad_maxima": 0
+}
+
+### 13. Crear un espacio con capacidad_maxima negativa (Esperado: 400 Bad Request)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Capacidad Negativa",
+  "tipo": "Padel",
+  "ubicacion": "Aquí",
+  "capacidad_maxima": -5
+}
+
+### 14. Crear un espacio con capacidad_maxima decimal (Esperado: 400 Bad Request)
+# La columna es INTEGER, no cabe un decimal
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Capacidad Decimal",
+  "tipo": "Padel",
+  "ubicacion": "Aquí",
+  "capacidad_maxima": 12.5
+}
+
+### 15. Crear un espacio con disponible que no sea 0 ni 1 (Esperado: 400 Bad Request)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Disponible Raro",
+  "tipo": "Padel",
+  "ubicacion": "Aquí",
+  "capacidad_maxima": 10,
+  "disponible": 5
+}
+
+### 16. Actualizar un espacio que NO existe (Esperado: 404 Not Found)
+PUT {{baseUrl}}/9999
+Content-Type: application/json
+
+{
+  "nombre": "Fantasma"
+}
+
+### 17. Actualizar con capacidad_maxima como texto (Esperado: 400 Bad Request)
+# La validación del PUT debe ser la misma que la del POST
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "capacidad_maxima": "muchos"
+}
+
+### 18. Actualizar con disponible que no sea 0 ni 1 (Esperado: 400 Bad Request)
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "disponible": "si"
+}
+
+### 19. Borrar un espacio que NO existe (Esperado: 404 Not Found)
+DELETE {{baseUrl}}/9999
+
+### ==========================================
+### FLUJO COMPLETO DE PRUEBA (Test Flow)
+### ==========================================
+
+### 20. [PASO 1] Crear un espacio temporal
+# @name espacioTemp
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Cancha de Baloncesto Temporal",
+  "tipo": "Baloncesto",
+  "ubicacion": "Barrio Norte",
+  "capacidad_maxima": 20
+}
+
+### 21. [PASO 2] Modificar el espacio temporal (Asumiendo que se creó con ID 4)
+# Si vuestro auto-increment va por otro número, cambiad el 4
+PUT {{baseUrl}}/4
+Content-Type: application/json
+
+{
+  "nombre": "Cancha de Baloncesto (Oficial)",
+  "disponible": 1
+}
+
+### 22. [PASO 3] Borrar el espacio temporal (Esperado: 204 No Content)
+DELETE {{baseUrl}}/4
+
+### 23. [PASO 4] Comprobar que ya no existe (Esperado: 404 Not Found)
+GET {{baseUrl}}/4

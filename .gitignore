@@ -1,0 +1,23 @@
+# Dependencias
+node_modules/
+
+# Builds / caches
+dist/
+.angular/
+out-tsc/
+coverage/
+
+# Base de datos local (SQLite)
+*.db
+*.db-shm
+*.db-wal
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.idea/

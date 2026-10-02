@@ -1,0 +1,387 @@
+@baseUrl = http://localhost:3000/api/reservas
+
+### ==========================================
+### CASOS DE ÉXITO (Happy Path)
+### ==========================================
+
+### 1. Obtener todas las reservas (Esperado: 200 OK)
+# Devuelve los nombres de usuario y de espacio, no los IDs (JOIN)
+GET {{baseUrl}}
+
+### 2. Obtener una reserva existente por ID (Esperado: 200 OK)
+GET {{baseUrl}}/1
+
+### 3. Crear una reserva válida (Esperado: 201 Created)
+
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 1,
+  "espacio_id": 1,
+  "fecha": "2026-03-15",
+  "hora_inicio": "10:00",
+  "hora_fin": "11:30"
+}
+
+### 4. Reservar un espacio para varios usuarios a la vez (Esperado: 201 Created)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 2,
+  "espacio_id": 2,
+  "fecha": "2026-03-15",
+  "hora_inicio": "18:00",
+  "hora_fin": "19:30"
+}
+
+### 5. Crear una reserva adjunta justo ANTES de otra (Esperado: 201 Created)
+# 08:00-10:00 termina exactamente cuando empieza la del punto 3.
+# Dos reservas que solo se tocan en el borde NO se solapan.
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 2,
+  "espacio_id": 1,
+  "fecha": "2026-03-15",
+  "hora_inicio": "08:00",
+  "hora_fin": "10:00"
+}
+
+### 6. Crear una reserva adjunta justo DESPUÉS de otra (Esperado: 201 Created)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 3,
+  "espacio_id": 1,
+  "fecha": "2026-03-15",
+  "hora_inicio": "11:30",
+  "hora_fin": "13:00"
+}
+
+### 7. Cancelar una reserva cambiando su estado (Esperado: 200 OK)
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "estado": "cancelada"
+}
+
+### 8. Volver a confirmar la reserva cancelada (Esperado: 200 OK)
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "estado": "confirmada"
+}
+
+### 9. Reservar el MISMO horario en un espacio distinto (Esperado: 201 Created)
+# El espacio 2 está libre a esas horas
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 1,
+  "espacio_id": 2,
+  "fecha": "2026-03-16",
+  "hora_inicio": "10:00",
+  "hora_fin": "11:30"
+}
+
+### 10. Borrar una reserva existente (Esperado: 204 No Content - Sin cuerpo en respuesta)
+DELETE {{baseUrl}}/2
+
+
+### ==========================================
+### CASOS DE ERROR Y VALIDACIONES
+### ==========================================
+
+### 11. Obtener una reserva con ID que NO existe (Esperado: 404 Not Found)
+GET {{baseUrl}}/9999
+
+### 12. Crear una reserva faltando campos obligatorios (Esperado: 400 Bad Request)
+# Faltan 'fecha', 'hora_inicio' y 'hora_fin'
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 1,
+  "espacio_id": 1
+}
+
+### 13. Crear una reserva sin hora_fin (Esperado: 400 Bad Request)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 1,
+  "espacio_id": 1,
+  "fecha": "2026-04-01",
+  "hora_inicio": "09:00"
+}
+
+### 14. Crear una reserva con un usuario que NO existe (Esperado: 404 Not Found)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 9999,
+  "espacio_id": 1,
+  "fecha": "2026-04-01",
+  "hora_inicio": "09:00",
+  "hora_fin": "10:00"
+}
+
+### 15. Crear una reserva con un espacio que NO existe (Esperado: 404 Not Found)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 1,
+  "espacio_id": 9999,
+  "fecha": "2026-04-01",
+  "hora_inicio": "09:00",
+  "hora_fin": "10:00"
+}
+
+### 16. Reservar un espacio cerrado por mantenimiento (Esperado: 400 Bad Request)
+# El Gimnasio Cubierto (id 3) se crea con disponible = 0
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 1,
+  "espacio_id": 3,
+  "fecha": "2026-04-01",
+  "hora_inicio": "09:00",
+  "hora_fin": "10:00"
+}
+
+### 17. Crear una reserva con hora mal formada (Esperado: 400 Bad Request)
+# "9:00" en vez de "09:00"
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 1,
+  "espacio_id": 1,
+  "fecha": "2026-04-01",
+  "hora_inicio": "9:00",
+  "hora_fin": "10:00"
+}
+
+### 18. Crear una reserva con fecha mal formada (Esperado: 400 Bad Request)
+# Formato DD-MM-YYYY en vez de YYYY-MM-DD
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 1,
+  "espacio_id": 1,
+  "fecha": "01-04-2026",
+  "hora_inicio": "09:00",
+  "hora_fin": "10:00"
+}
+
+### 19. Doble reserva exacta: mismo espacio, fecha y hora (Esperado: 409 Conflict)
+# El usuario 1 ya tiene una reserva el 2026-03-16 de 10:00 a 11:30 en el espacio 2
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 2,
+  "espacio_id": 2,
+  "fecha": "2026-03-16",
+  "hora_inicio": "10:00",
+  "hora_fin": "11:00"
+}
+
+### 20. Solapamiento parcial: empieza dentro de otra reserva (Esperado: 409 Conflict)
+# La reserva existente es 10:00-11:30. Esta empieza a las 11:00.
+# Antes de la corrección el UNIQUE solo comparaba la hora de inicio
+# exacta, así que esto pasaba y devolvía 201.
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 2,
+  "espacio_id": 2,
+  "fecha": "2026-03-16",
+  "hora_inicio": "11:00",
+  "hora_fin": "12:00"
+}
+
+### 21. Solapamiento parcial: termina dentro de otra reserva (Esperado: 409 Conflict)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 2,
+  "espacio_id": 2,
+  "fecha": "2026-03-16",
+  "hora_inicio": "09:30",
+  "hora_fin": "10:30"
+}
+
+### 22. Solapamiento total: contiene por completo otra reserva (Esperado: 409 Conflict)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 2,
+  "espacio_id": 2,
+  "fecha": "2026-03-16",
+  "hora_inicio": "09:00",
+  "hora_fin": "13:00"
+}
+
+### 23. Actualizar una reserva que NO existe (Esperado: 404 Not Found)
+PUT {{baseUrl}}/9999
+Content-Type: application/json
+
+{
+  "estado": "cancelada"
+}
+
+### 24. Borrar una reserva que NO existe (Esperado: 404 Not Found)
+DELETE {{baseUrl}}/9999
+
+
+### ==========================================
+### FLUJO COMPLETO DE PRUEBA (Test Flow)
+### ==========================================
+
+### 25. [PASO 1] Reservar un espacio concreto en una fecha de prueba
+# Ejecutando este fichero entero en orden, esta reserva es el ID 8
+# @name reservaTemp
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 1,
+  "espacio_id": 1,
+  "fecha": "2026-06-01",
+  "hora_inicio": "17:00",
+  "hora_fin": "18:00"
+}
+
+### 26. [PASO 2] Intentar solapar la reserva anterior (Esperado: 409 Conflict)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 2,
+  "espacio_id": 1,
+  "fecha": "2026-06-01",
+  "hora_inicio": "17:30",
+  "hora_fin": "19:00"
+}
+
+### 27. [PASO 3] Cancelar la reserva del paso 1 (Esperado: 200 OK)
+# Ojo: cancelar la ID 8, que es la del paso 1. Cancelar otra no libera este hueco.
+PUT {{baseUrl}}/8
+Content-Type: application/json
+
+{
+  "estado": "cancelada"
+}
+
+### 28. [PASO 4] Volver a reservar el mismo hueco ahora que está cancelada (Esperado: 201 Created)
+# Las reservas canceladas liberan el horario. El nuevo ID será el 9.
+POST {{baseUrl}}
+Content-Type: application/json
+
+
+{
+  "usuario_id": 2,
+  "espacio_id": 1,
+  "fecha": "2026-06-01",
+  "hora_inicio": "17:00",
+  "hora_fin": "18:00"
+}
+
+### 29. [PASO 5] Borrar la reserva creada en el paso 4 (Esperado: 204 No Content)
+DELETE {{baseUrl}}/9
+
+### 30. [PASO 6] Comprobar que ya no existe (Esperado: 404 Not Found)
+GET {{baseUrl}}/9
+
+
+### ==========================================
+### REGRESIÓN: UNA CANCELACIÓN DEBE LIBERAR EL HUECO
+### ==========================================
+### Antes esto fallaba con 409. La tabla tenía un
+### UNIQUE (espacio_id, fecha, hora_inicio) que no miraba la columna estado, así que
+### una reserva cancelada seguía ocupando la fila del índice y bloqueaba el horario
+### para siempre. Ahora hay un índice único PARCIAL que solo cubre las no canceladas.
+
+### 31. [PASO 1] Reservar un hueco (Esperado: 201 Created)
+# Ejecutando este fichero entero en orden, esta reserva es la ID 10.
+#
+# Sobre los IDs: AUTOINCREMENT nunca retrocede, así que borrar una fila NO libera su
+# número. El paso 29 borró la ID 9, pero la siguiente reserva sigue siendo la 10, no
+# la 9. Cada caso indica el ID que produce al ejecutarse en orden; si ejecutas un caso
+# suelto o reseteas la base, mira el "id" que devuelve la respuesta del POST.
+#
+# La fecha 2026-07-15 no se usa en ningún otro caso del fichero.
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 1,
+  "espacio_id": 1,
+  "fecha": "2026-07-15",
+  "hora_inicio": "20:00",
+  "hora_fin": "21:00"
+}
+
+### 32. [PASO 2] Doble reserva exacta (Esperado: 409 Conflict)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 2,
+  "espacio_id": 1,
+  "fecha": "2026-07-15",
+  "hora_inicio": "20:00",
+  "hora_fin": "21:30"
+}
+
+### 33. [PASO 3] Cancelar la reserva del paso 1 (Esperado: 200 OK)
+# Cancelar la ID 10, que es la que creó el paso 31. Si te saltas este paso
+# por estar mal el ID, el paso 34 devolverá 409 y parecerá un fallo del API.
+PUT {{baseUrl}}/10
+Content-Type: application/json
+
+{
+  "estado": "cancelada"
+}
+
+### 34. [PASO 4] Volver a reservar el hueco ya cancelado (Esperado: 201 Created)
+# Si esto devuelve 409, el índice único sigue contando las reservas canceladas
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 2,
+  "espacio_id": 1,
+  "fecha": "2026-07-15",
+  "hora_inicio": "20:00",
+  "hora_fin": "21:30"
+}
+
+### 35. [PASO 5] La duplicada sigue bloqueada con la nueva confirmada (Esperado: 409 Conflict)
+# Cancelar una reserva no desactiva el control sobre las que sí están confirmadas
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "usuario_id": 3,
+  "espacio_id": 1,
+  "fecha": "2026-07-15",
+  "hora_inicio": "20:30",
+  "hora_fin": "22:00"
+}

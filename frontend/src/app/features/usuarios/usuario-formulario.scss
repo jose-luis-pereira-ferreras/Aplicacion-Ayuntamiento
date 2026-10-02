@@ -1,0 +1,20 @@
+.volver {
+  margin-bottom: 16px;
+}
+
+.formulario__nota {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  mat-icon {
+    flex: 0 0 auto;
+    color: var(--mat-sys-primary);
+  }
+}
+
+.acciones {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}

@@ -1,0 +1,157 @@
+@baseUrl = http://localhost:3000/api/usuarios
+
+### ==========================================
+### CASOS DE ÉXITO (Happy Path)
+### ==========================================
+
+### 1. Obtener todos los usuarios (Esperado: 200 OK)
+# IMPORTANTE: Ningún usuario debe incluir el campo "password"
+GET {{baseUrl}}
+
+### 2. Obtener un usuario existente por ID (Esperado: 200 OK)
+GET {{baseUrl}}/1
+
+### 3. Crear un usuario completo (Esperado: 201 Created)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Marta Ruiz",
+  "email": "marta@email.com",
+  "password": "1234"
+}
+
+### 4. Crear un usuario con rol admin (Esperado: 201 Created)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Admin Temporal",
+  "email": "admin.temporal@ayto.com",
+  "password": "admin123",
+  "rol": "admin"
+}
+
+### 5. Crear un usuario sin especificar rol (Esperado: 201 Created, rol = ciudadano)
+# El rol por defecto lo pone la base de datos
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Pedro Sin Rol",
+  "email": "pedro@email.com",
+  "password": "1234"
+}
+
+### 6. Actualización parcial: cambiar solo el nombre (Esperado: 200 OK)
+# El email, la contraseña y el rol deben mantenerse igual
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "nombre": "Ana García Editada"
+}
+
+### 7. Actualizar el rol a admin (Esperado: 200 OK)
+PUT {{baseUrl}}/2
+Content-Type: application/json
+
+{
+  "rol": "admin"
+}
+
+### 8. Borrar un usuario existente (Esperado: 204 No Content - Sin cuerpo en respuesta)
+# Cuidado: al borrar un usuario, sus reservas se borran también (ON DELETE CASCADE)
+DELETE {{baseUrl}}/5
+
+
+### ==========================================
+### CASOS DE ERROR Y VALIDACIONES
+### ==========================================
+
+### 9. Obtener un usuario con ID que NO existe (Esperado: 404 Not Found)
+GET {{baseUrl}}/9999
+
+### 10. Crear un usuario faltando campos obligatorios (Esperado: 400 Bad Request)
+# Faltan 'email' y 'password'
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Usuario Incompleto"
+}
+
+### 11. Crear un usuario sin la contraseña (Esperado: 400 Bad Request)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Sin Contraseña",
+  "email": "sinpass@email.com"
+}
+
+### 12. Crear un usuario con email duplicado (Esperado: 409 Conflict)
+# El email Ana García ya existe en la base de datos
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Email Repetido",
+  "email": "ana@email.com",
+  "password": "1234"
+}
+
+### 13. Actualizar un usuario que NO existe (Esperado: 404 Not Found)
+PUT {{baseUrl}}/9999
+Content-Type: application/json
+
+{
+  "nombre": "Fantasma"
+}
+
+### 14. Actualizar el email a uno que ya pertenece a otro usuario (Esperado: 409 Conflict)
+PUT {{baseUrl}}/2
+Content-Type: application/json
+
+{
+  "email": "ana@email.com"
+}
+
+### 15. Borrar un usuario que NO existe (Esperado: 404 Not Found)
+DELETE {{baseUrl}}/9999
+
+
+### ==========================================
+### FLUJO COMPLETO DE PRUEBA (Test Flow)
+### ==========================================
+
+### 16. [PASO 1] Crear un usuario temporal
+# Con el seed por defecto (3 usuarios) este usuario es el ID 7:
+# el AUTOINCREMENT no retrocede aunque en el punto 8 se borrara el ID 5.
+# @name usuarioTemp
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "nombre": "Usuario Temporal",
+  "email": "temporal@email.com",
+  "password": "1234"
+}
+
+### 17. [PASO 2] Comprobar que existe (Esperado: 200 OK)
+GET {{baseUrl}}/7
+
+### 18. [PASO 3] Cambiarle la contraseña y el rol (Esperado: 200 OK)
+PUT {{baseUrl}}/7
+Content-Type: application/json
+
+{
+  "password": "nuevaClave123",
+  "rol": "admin"
+}
+
+### 19. [PASO 4] Borrar el usuario temporal (Esperado: 204 No Content)
+DELETE {{baseUrl}}/7
+
+### 20. [PASO 5] Comprobar que ya no existe (Esperado: 404 Not Found)
+GET {{baseUrl}}/7

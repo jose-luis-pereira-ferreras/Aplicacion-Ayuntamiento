@@ -1,0 +1,98 @@
+<app-pagina-cabecera
+  icono="event"
+  titulo="Detalle de la reserva"
+  [subtitulo]="reserva() ? 'Reserva #' + reserva()!.id : ''"
+/>
+
+<a class="volver" matButton routerLink="/reservas">
+  <mat-icon>arrow_back</mat-icon>
+  Volver a reservas
+</a>
+
+@if (cargando()) {
+  <app-cargando [filas]="3" />
+} @else if (errorCarga() || !reserva()) {
+  <app-estado-vacio
+    icono="event_busy"
+    titulo="No se pudo cargar la reserva"
+    [mensaje]="errorCarga()?.message ?? 'La reserva solicitada no existe.'"
+  >
+    <a matButton="filled" routerLink="/reservas">Ver todas las reservas</a>
+  </app-estado-vacio>
+} @else if (reserva(); as r) {
+  <article class="detalle tarjeta">
+    <header class="detalle__cabecera">
+      <span class="detalle__icono">
+        <mat-icon>{{ iconoEspacio() }}</mat-icon>
+      </span>
+      <div class="detalle__titulos">
+        <h2 class="detalle__espacio">{{ r.espacio_nombre }}</h2>
+        <p class="detalle__fecha">{{ fechaLarga(r.fecha) }}</p>
+      </div>
+      <app-chip-estado [estado]="r.estado" />
+    </header>
+
+    <mat-divider />
+
+    <dl class="detalle__datos">
+      <div>
+        <dt>Horario</dt>
+        <dd class="detalle__horario">
+          {{ r.hora_inicio }} – {{ r.hora_fin }}
+          <span class="detalle__duracion">({{ duracion() }})</span>
+        </dd>
+      </div>
+      <div>
+        <dt>Usuario</dt>
+        <dd>{{ r.usuario_nombre }}</dd>
+      </div>
+      <div>
+        <dt>Instalación</dt>
+        <dd>{{ r.espacio_nombre }}</dd>
+      </div>
+      <div>
+        <dt>Fecha</dt>
+        <dd>{{ r.fecha | date: 'd MMMM y' }}</dd>
+      </div>
+    </dl>
+
+    @if (r.estado === 'cancelada') {
+      <p class="detalle__nota">
+        <mat-icon>info</mat-icon>
+        <span>
+          Esta reserva está cancelada, así que el horario queda libre y no cuenta para el cálculo de
+          solapamientos.
+        </span>
+      </p>
+    }
+
+    <mat-divider />
+
+    <div class="detalle__acciones">
+      @if (cambiando()) {
+        <mat-spinner diameter="28" />
+      } @else {
+        <button matButton="filled" (click)="cambiarEstado()">
+          <mat-icon>{{ r.estado === 'confirmada' ? 'event_busy' : 'event_available' }}</mat-icon>
+          {{ r.estado === 'confirmada' ? 'Cancelar reserva' : 'Reactivar reserva' }}
+        </button>
+
+        <button matButton (click)="eliminar()">
+          <mat-icon>delete</mat-icon>
+          Eliminar
+        </button>
+      }
+
+      <span class="detalle__espaciador"></span>
+
+      <a matButton routerLink="/reservas/agenda" [queryParams]="{ espacio: espacio()?.id }">
+        <mat-icon>calendar_month</mat-icon>
+        Ver agenda
+      </a>
+      <a matButton routerLink="/reservas/nueva" [queryParams]="{ espacio: espacio()?.id }">
+        <mat-icon>add</mat-icon>
+        Nueva reserva aquí
+      </a>
+    </div>
+  </article>
+}

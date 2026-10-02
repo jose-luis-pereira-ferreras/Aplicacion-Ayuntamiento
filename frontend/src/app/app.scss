@@ -1,0 +1,220 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.pantalla-acceso {
+  display: flex;
+  align-items: center;
+  min-height: 100%;
+  padding: clamp(16px, 4vw, 40px);
+  background:
+    radial-gradient(
+      1100px 520px at 8% -10%,
+      color-mix(in srgb, var(--mat-sys-primary) 14%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 480px at 100% 0%,
+      color-mix(in srgb, var(--mat-sys-tertiary) 12%, transparent),
+      transparent 55%
+    ),
+    var(--mat-sys-surface-container-low);
+}
+
+.cascaron {
+  height: 100%;
+  background: var(--mat-sys-surface-container-low);
+}
+
+/* ---------- Menu lateral ---------- */
+
+.menu-lateral {
+  width: 248px;
+  border-right: none;
+  background: var(--mat-sys-surface);
+  display: flex;
+  flex-direction: column;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px;
+}
+
+.marca__icono {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--mat-sys-primary), var(--mat-sys-tertiary));
+  color: var(--mat-sys-on-primary);
+
+  mat-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+  }
+}
+
+.marca__texto {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.marca__ayto {
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.marca__app {
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.navegacion {
+  flex: 1;
+  padding-top: 4px;
+}
+
+.navegacion a {
+  margin: 2px 10px;
+  border-radius: 10px;
+
+  &.activo {
+    --mat-list-list-item-container-color: var(--mat-sys-primary);
+    --mat-list-list-item-leading-icon-color: var(--mat-sys-on-primary);
+    --mat-list-list-item-label-text-color: var(--mat-sys-on-primary);
+    --mat-list-list-item-hover-label-text-color: var(--mat-sys-on-primary);
+    --mat-list-list-item-hover-leading-icon-color: var(--mat-sys-on-primary);
+    font-weight: 600;
+  }
+}
+
+.pie-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+  }
+}
+
+/* ---------- Barra superior ---------- */
+
+.contenido-cascaron {
+  display: flex;
+  flex-direction: column;
+}
+
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  gap: 12px;
+  padding-inline: 16px;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface);
+}
+
+.barra__titulo {
+  font: var(--mat-sys-title-medium);
+}
+
+.barra__espaciador {
+  flex: 1;
+}
+
+.usuario {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 4px 4px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition: background-color 150ms ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--mat-sys-on-surface) 8%, transparent);
+  }
+}
+
+.usuario__avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font: var(--mat-sys-label-large);
+}
+
+.usuario__datos {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.usuario__nombre {
+  font: var(--mat-sys-label-large);
+}
+
+.usuario__rol {
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+  text-transform: capitalize;
+}
+
+.menu-usuario {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px 10px;
+
+  &__nombre {
+    font: var(--mat-sys-title-small);
+  }
+
+  &__email {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+/* ---------- Zona de contenido ---------- */
+
+.zona {
+  flex: 1;
+  padding: 24px clamp(16px, 4vw, 32px) 48px;
+  max-width: 1320px;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .barra__titulo,
+  .usuario__datos {
+    display: none;
+  }
+
+  .zona {
+    padding: 16px 14px 40px;
+  }
+}

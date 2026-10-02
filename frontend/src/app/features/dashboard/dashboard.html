@@ -1,0 +1,156 @@
+<app-pagina-cabecera
+  icono="space_dashboard"
+  titulo="Panel de control"
+  [subtitulo]="'Resumen de la actividad de las instalaciones · ' + (hoy | date: 'EEEE, d MMMM y')"
+>
+  <button matButton (click)="cargar()">
+    <mat-icon>refresh</mat-icon>
+    Actualizar
+  </button>
+  <a matButton="filled" routerLink="/reservas/nueva">
+    <mat-icon>add</mat-icon>
+    Nueva reserva
+  </a>
+</app-pagina-cabecera>
+
+@if (cargando()) {
+  <app-cargando [filas]="3" />
+} @else if (errorCarga()) {
+  <app-estado-vacio
+    icono="cloud_off"
+    titulo="No se pudieron cargar los datos"
+    [mensaje]="errorCarga()!.message"
+  >
+    <button matButton="filled" (click)="cargar()">Reintentar</button>
+  </app-estado-vacio>
+} @else {
+  <div class="rejilla rejilla-kpi">
+    @for (kpi of kpis(); track kpi.etiqueta) {
+      <article class="tarjeta kpi">
+        <span class="kpi__icono" [class]="'kpi__icono kpi__icono--' + kpi.color">
+          <mat-icon>{{ kpi.icono }}</mat-icon>
+        </span>
+        <div class="kpi__cuerpo">
+          <p class="kpi__valor">{{ kpi.valor }}</p>
+          <p class="kpi__etiqueta">{{ kpi.etiqueta }}</p>
+          <p class="kpi__detalle">{{ kpi.detalle }}</p>
+        </div>
+      </article>
+    }
+  </div>
+
+  <div class="rejilla panel">
+    <!-- Ocupacion por instalacion -->
+    <section class="tarjeta">
+      <h2 class="seccion__titulo">Ocupación por instalación</h2>
+      <p class="panel__nota">Horas reservadas en total, considerando todas las fechas.</p>
+
+      @if (ocupacionEspacios().length) {
+        <ul class="barras">
+          @for (item of ocupacionEspacios(); track item.espacio.id) {
+            <li class="barra">
+              <span class="barra__nombre">{{ item.espacio.nombre }}</span>
+              <span class="barra__pista">
+                <span
+                  class="barra__relleno"
+                  [class.barra__relleno--cerrado]="!item.espacio.disponible"
+                  [style.width.%]="item.porcentaje"
+                ></span>
+              </span>
+              <span class="barra__valor" [matTooltip]="item.etiqueta">
+                {{ formateaHoras(item.horas) }}
+              </span>
+            </li>
+          }
+        </ul>
+      } @else {
+        <app-estado-vacio
+          icono="bar_chart"
+          titulo="Sin datos de ocupación"
+          mensaje="Aún no hay reservas registradas."
+        />
+      }
+    </section>
+
+    <!-- Proximas reservas -->
+    <section class="tarjeta">
+      <div class="panel__cabecera">
+        <h2 class="seccion__titulo">Próximas reservas</h2>
+        <a matButton routerLink="/reservas">Ver todas</a>
+      </div>
+
+      @if (proximas().length) {
+        <ul class="lista">
+          @for (reserva of proximas(); track reserva.id) {
+            <li class="fila">
+              <span class="fila__fecha">
+                <span class="fila__dia">{{ fechaCorta(reserva.fecha) }}</span>
+                <span class="fila__hora"> {{ reserva.hora_inicio }}–{{ reserva.hora_fin }} </span>
+              </span>
+              <span class="fila__texto">
+                <a class="fila__titulo" [routerLink]="['/reservas', reserva.id]">
+                  {{ reserva.espacio_nombre }}
+                </a>
+                <span class="fila__detalle">{{ reserva.usuario_nombre }}</span>
+              </span>
+              <app-chip-estado [estado]="reserva.estado" />
+            </li>
+          }
+        </ul>
+      } @else {
+        <app-estado-vacio
+          icono="event_busy"
+          titulo="No hay reservas próximas"
+          mensaje="Cuando se confirmen reservas a partir de hoy aparecerán aquí."
+        />
+      }
+    </section>
+  </div>
+
+  <!-- Mis reservas -->
+  <section class="seccion tarjeta">
+    <div class="panel__cabecera">
+      <div>
+        <h2 class="seccion__titulo">Tus próximas reservas</h2>
+        <p class="panel__nota">Reservas confirmadas a tu nombre.</p>
+      </div>
+      <a matButton routerLink="/reservas/nueva">
+        <mat-icon>add</mat-icon>
+        Reservar
+      </a>
+    </div>
+
+    @if (misReservas().length) {
+      <ul class="rejilla rejilla-tarjetas">
+        @for (reserva of misReservas(); track reserva.id) {
+          <li>
+            <a class="mireserva" [routerLink]="['/reservas', reserva.id]">
+              <span class="mireserva__icono">
+                <mat-icon>sports_tennis</mat-icon>
+              </span>
+              <span class="mireserva__cuerpo">
+                <span class="mireserva__espacio">{{ reserva.espacio_nombre }}</span>
+                <span class="mireserva__datos">
+                  {{ reserva.fecha | date: 'd MMM y' }} · {{ reserva.hora_inicio }}–{{
+                    reserva.hora_fin
+                  }}
+                </span>
+              </span>
+              <mat-icon class="mireserva__flecha">chevron_right</mat-icon>
+            </a>
+          </li>
+        }
+      </ul>
+    } @else {
+      <app-estado-vacio
+        icono="sports_soccer"
+        titulo="No tienes reservas próximas"
+        [mensaje]="
+          'Cuando reserves ' + (sesion.usuario()?.nombre ?? 'una instalación') + ' aparecerán aquí.'
+        "
+      >
+        <a matButton="filled" routerLink="/reservas/nueva">Hacer una reserva</a>
+      </app-estado-vacio>
+    }
+  </section>
+}

@@ -1,0 +1,87 @@
+@if (pantallaAcceso()) {
+  <div class="pantalla-acceso">
+    <router-outlet />
+  </div>
+} @else {
+  <mat-sidenav-container class="cascaron">
+    <mat-sidenav
+      #cajon
+      class="menu-lateral"
+      [mode]="modoCajon()"
+      [opened]="abierto()"
+      [fixedInViewport]="esMovil()"
+    >
+      <div class="marca">
+        <span class="marca__icono"><mat-icon>sports_soccer</mat-icon></span>
+        <span class="marca__texto">
+          <span class="marca__ayto">{{ nombreAyto }}</span>
+          <span class="marca__app">{{ nombreApp }}</span>
+        </span>
+      </div>
+
+      <mat-nav-list class="navegacion">
+        @for (item of menu; track item.ruta) {
+          <a
+            mat-list-item
+            [routerLink]="item.ruta"
+            routerLinkActive="activo"
+            [routerLinkActiveOptions]="{ exact: item.ruta === '/reservas' }"
+            (click)="esMovil() && cajon.close()"
+          >
+            <mat-icon matListItemIcon>{{ item.icono }}</mat-icon>
+            <span matListItemTitle>{{ item.etiqueta }}</span>
+          </a>
+        }
+      </mat-nav-list>
+
+      <div class="pie-menu">
+        <mat-icon>info</mat-icon>
+        <span>Datos en vivo desde la API municipal</span>
+      </div>
+    </mat-sidenav>
+
+    <mat-sidenav-content class="contenido-cascaron">
+      <mat-toolbar class="barra">
+        <button
+          class="barra__menu"
+          mat-icon-button
+          (click)="cajon.toggle()"
+          aria-label="Abrir o cerrar el menú"
+        >
+          <mat-icon>menu</mat-icon>
+        </button>
+
+        <span class="barra__titulo">{{ nombreAyto }} · {{ nombreApp }}</span>
+
+        <span class="barra__espaciador"></span>
+
+        @if (sesion.usuario(); as usuario) {
+          <button class="usuario" [matMenuTriggerFor]="menuUsuario">
+            <span class="usuario__avatar">{{ iniciales() }}</span>
+            <span class="usuario__datos">
+              <span class="usuario__nombre">{{ usuario.nombre }}</span>
+              <span class="usuario__rol">{{ usuario.rol }}</span>
+            </span>
+            <mat-icon>expand_more</mat-icon>
+          </button>
+
+          <mat-menu #menuUsuario="matMenu" xPosition="before">
+            <div class="menu-usuario" (click)="$event.stopPropagation()">
+              <span class="menu-usuario__nombre">{{ usuario.nombre }}</span>
+              <span class="menu-usuario__email">{{ usuario.email }}</span>
+            </div>
+            <mat-divider />
+            <button mat-menu-item (click)="cerrarSesion()">
+              <mat-icon>logout</mat-icon>
+              <span>Cambiar de usuario</span>
+            </button>
+          </mat-menu>
+        }
+      </mat-toolbar>
+
+      <main class="zona">
+        <router-outlet />
+      </main>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+}

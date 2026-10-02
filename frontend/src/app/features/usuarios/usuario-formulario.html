@@ -1,0 +1,88 @@
+<app-pagina-cabecera
+  icono="person"
+  [titulo]="titulo()"
+  [subtitulo]="
+    esEdicion()
+      ? 'Modifica los datos y guarda los cambios.'
+      : 'Da de alta una nueva persona usuaria.'
+  "
+/>
+
+<a class="volver" matButton routerLink="/usuarios">
+  <mat-icon>arrow_back</mat-icon>
+  Volver al listado
+</a>
+
+@if (cargando()) {
+  <app-cargando [filas]="3" />
+} @else if (errorCarga()) {
+  <app-estado-vacio
+    icono="cloud_off"
+    titulo="No se pudo cargar el usuario"
+    [mensaje]="errorCarga()!.message"
+  >
+    <a matButton="filled" routerLink="/usuarios">Volver al listado</a>
+  </app-estado-vacio>
+} @else {
+  <form class="formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+    <p class="formulario__nota">
+      <mat-icon>info</mat-icon>
+      La contraseña se almacena en la API en texto plano y no se vuelve a mostrar. Si la dejas vacía
+      al editar, se conserva la actual.
+    </p>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre</mat-label>
+      <mat-icon matPrefix>person</mat-icon>
+      <input matInput formControlName="nombre" autocomplete="name" />
+      @if (formulario.controls.nombre.hasError('required')) {
+        <mat-error>El nombre es obligatorio.</mat-error>
+      } @else if (formulario.controls.nombre.hasError('minlength')) {
+        <mat-error>Debe tener al menos 2 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Correo electrónico</mat-label>
+      <mat-icon matPrefix>mail</mat-icon>
+      <input matInput formControlName="email" type="email" autocomplete="email" />
+      @if (formulario.controls.email.hasError('required')) {
+        <mat-error>El correo es obligatorio.</mat-error>
+      } @else if (formulario.controls.email.hasError('email')) {
+        <mat-error>Introduce un correo válido.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ esEdicion() ? 'Nueva contraseña (opcional)' : 'Contraseña' }}</mat-label>
+      <mat-icon matPrefix>lock</mat-icon>
+      <input matInput formControlName="password" type="password" autocomplete="new-password" />
+      @if (formulario.controls.password.hasError('minlength')) {
+        <mat-error>Mínimo 4 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Rol</mat-label>
+      <mat-select formControlName="rol">
+        @for (opcion of opcionesRol; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+      @if (formulario.controls.rol.hasError('required')) {
+        <mat-error>Elige un rol.</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="acciones">
+      <button matButton="filled" type="submit" [disabled]="guardando()">
+        @if (guardando()) {
+          Guardando…
+        } @else {
+          {{ esEdicion() ? 'Guardar cambios' : 'Crear usuario' }}
+        }
+      </button>
+      <a matButton routerLink="/usuarios">Cancelar</a>
+    </div>
+  </form>
+}
