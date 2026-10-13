@@ -1,1 +1,1 @@
-window.__API_BASE__ = 'https://tu-backend.onrender.com/api';
+window.__API_BASE__ = 'https://aplicacion-ayuntamiento.onrender.com/api';
