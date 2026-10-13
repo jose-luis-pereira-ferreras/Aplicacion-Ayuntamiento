@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: aplicacion-ayuntamiento-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+
+  - type: static
+    name: aplicacion-ayuntamiento-web
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist/frontend/browser
+    envVars:
+      - key: NODE_VERSION
+        value: 22
